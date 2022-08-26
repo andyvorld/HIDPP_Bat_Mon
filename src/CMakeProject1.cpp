@@ -116,12 +116,7 @@ int main(int argc, char **argv) {
 		cur_dev = cur_dev->next;
 	}
 
-	try {
-		LGSTrayHID::WebsocketServer::init_and_serve(port);
-	}
-	catch (const std::exception& e) {
-		return 1;
-	}
+	LGSTrayHID::WebsocketServer::init_and_serve(port);
 
 	return 0;
 }
