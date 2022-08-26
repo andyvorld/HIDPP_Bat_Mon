@@ -89,99 +89,43 @@ int main() {
 		LGSTrayHID::WebsocketServer::notify_subscriptions("/devices/state/changed", LGSTrayHID::MapWrapper::to_json());
 	});
 
-	//for (size_t ii = 0; ii < 1; ii++) {
-		hid_init();
+	hid_init();
 
-		auto devs = std::unique_ptr<hid_device_info, decltype(&hid_free_enumeration)>(hid_enumerate(0x046d, 0x00), &hid_free_enumeration);
-		auto cur_dev = devs.get();
+	auto devs = std::unique_ptr<hid_device_info, decltype(&hid_free_enumeration)>(hid_enumerate(0x046d, 0x00), &hid_free_enumeration);
+	auto cur_dev = devs.get();
 
-		std::string short_path;
-		std::string long_path;
+	std::string short_path;
+	std::string long_path;
 
 
-		std::map<GUID, std::unique_ptr<LGSTrayHID::HIDDevice>, GUIDComparer> hid_device_map;
+	std::map<GUID, std::unique_ptr<LGSTrayHID::HIDDevice>, GUIDComparer> hid_device_map;
 
-		while (cur_dev) {
-			//printf("Device Found\n  type: %04hx %04hx\n  path: %s\n  serial_number: %ls", cur_dev->vendor_id, cur_dev->product_id, cur_dev->path, cur_dev->serial_number);
-			//printf("\n");
-			//printf("  Manufacturer: %ls\n", cur_dev->manufacturer_string);
-			//printf("  Product:      %ls\n", cur_dev->product_string);
-			//printf("  Release:      %hx\n", cur_dev->release_number);
-			//printf("  Interface:    %d\n", cur_dev->interface_number);
-			//printf("  Usage (page): 0x%hx (0x%hx)\n", cur_dev->usage, cur_dev->usage_page);
-			//printf("\n");
+	while (cur_dev) {
+		if ((cur_dev->usage_page & 0xFF00) == 0xFF00) {
+			if ((cur_dev->usage == USAGE_PAGE::SHORT) || (cur_dev->usage == USAGE_PAGE::LONG)) {
+				auto c_hid_device = std::shared_ptr<hid_device>(hid_open_path(cur_dev->path), &hid_close);
+				GUID _guid;
+				hid_winapi_get_container_id(c_hid_device.get(), &_guid);
 
-			if ((cur_dev->usage_page & 0xFF00) == 0xFF00) {
-				//if (cur_dev->usage == USAGE_PAGE::SHORT) {
-				//	short_path.assign(cur_dev->path);
-				//}
-				//else if (cur_dev->usage == USAGE_PAGE::LONG) {
-				//	long_path.assign(cur_dev->path);
-				//}
+				bool found = (hid_device_map.find(_guid) != hid_device_map.end());
 
-				if ((cur_dev->usage == USAGE_PAGE::SHORT) || (cur_dev->usage == USAGE_PAGE::LONG)) {
-					auto c_hid_device = std::shared_ptr<hid_device>(hid_open_path(cur_dev->path), &hid_close);
-					GUID _guid;
-					hid_winapi_get_container_id(c_hid_device.get(), &_guid);
+				if (!found) {
+					hid_device_map[_guid] = std::unique_ptr<LGSTrayHID::HIDDevice>(new LGSTrayHID::HIDDevice(GUID_to_string(_guid)));
+				}
 
-					bool found = (hid_device_map.find(_guid) != hid_device_map.end());
-
-					if (!found) {
-						hid_device_map[_guid] = std::unique_ptr<LGSTrayHID::HIDDevice>(new LGSTrayHID::HIDDevice(GUID_to_string(_guid)));
-					}
-
-					if (cur_dev->usage == USAGE_PAGE::SHORT) {
-						hid_device_map[_guid]->assign_short(c_hid_device);
-					}
-					else if (cur_dev->usage == USAGE_PAGE::LONG) {
-						hid_device_map[_guid]->assign_long(c_hid_device);
-					}
+				if (cur_dev->usage == USAGE_PAGE::SHORT) {
+					hid_device_map[_guid]->assign_short(c_hid_device);
+				}
+				else if (cur_dev->usage == USAGE_PAGE::LONG) {
+					hid_device_map[_guid]->assign_long(c_hid_device);
 				}
 			}
-
-			cur_dev = cur_dev->next;
 		}
 
-		//auto short_dev = std::shared_ptr<hid_device>(hid_open_path(short_path.c_str()), &hid_close);
-		//auto long_dev = std::shared_ptr<hid_device>(hid_open_path(long_path.c_str()), &hid_close);
-
-		//{
-		//	GUID tmp;
-		//	hid_winapi_get_container_id(short_dev.get(), &tmp);
-		//	std::cout << std::hex << tmp.Data1;
-		//	std::cout << std::hex << tmp.Data2;
-		//	std::cout << std::hex << tmp.Data3;
-		//	for (int i = 0; i < 8; i++) {
-		//		std::cout << std::hex << (int)tmp.Data4[i];
-		//	}
-		//}
-		//std::cout << std::endl;
-
-		//LGSTrayHID::HIDDevice HidDevice;
-		//HidDevice.assign_short(short_dev);
-		//HidDevice.assign_long(long_dev);
-		int i = 0;
-		while (true) {
-			i++;
-			for (const auto& pair : hid_device_map) {
-				for (const auto& pair2 : pair.second->devices) {
-					pair2.second->update_battery();
-				}
-			}
-
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-
-			if (i > 5) {
-				break;
-			}
-		}
-	//}
+		cur_dev = cur_dev->next;
+	}
 
 	LGSTrayHID::WebsocketServer::init_and_serve(9020);
-
-	if (_CrtDumpMemoryLeaks()) {
-		std::cout << "Mem Leak Found" << std::endl;
-	}
 
 	return 0;
 }
