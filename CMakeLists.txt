@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 project("libHidTest")
 
-set(EXEC_NAME "main")
+set(EXEC_NAME "hidpp_mon")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/hidapi-win")
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/websocketpp")
