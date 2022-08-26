@@ -119,7 +119,11 @@ namespace WebsocketServer {
 
 		server.set_message_handler(std::bind(&on_message, &server, _1, _2));
 
-		server.listen(port);
+		websocketpp::lib::asio::ip::tcp::endpoint ep;
+		ep.address(boost::asio::ip::address_v4::loopback());
+		ep.port(port);
+
+		server.listen(ep);
 		server.start_accept();
 
 		server.run();
