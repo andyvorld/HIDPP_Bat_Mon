@@ -84,48 +84,43 @@ int main(int argc, char **argv) {
 		LGSTrayHID::WebsocketServer::notify_subscriptions("/devices/state/changed", LGSTrayHID::MapWrapper::to_json());
 	});
 
-	try {
-		hid_init();
+	hid_init();
 
-		auto devs = std::unique_ptr<hid_device_info, decltype(&hid_free_enumeration)>(hid_enumerate(0x046d, 0x00), &hid_free_enumeration);
-		auto cur_dev = devs.get();
+	auto devs = std::unique_ptr<hid_device_info, decltype(&hid_free_enumeration)>(hid_enumerate(0x046d, 0x00), &hid_free_enumeration);
+	auto cur_dev = devs.get();
 
-		std::map<GUID, std::unique_ptr<LGSTrayHID::HIDDevice>, GUIDComparer> hid_device_map;
+	std::map<GUID, std::unique_ptr<LGSTrayHID::HIDDevice>, GUIDComparer> hid_device_map;
 
-		while (cur_dev) {
-			if ((cur_dev->usage_page & 0xFF00) == 0xFF00) {
-				if ((cur_dev->usage == USAGE_PAGE::SHORT) || (cur_dev->usage == USAGE_PAGE::LONG)) {
-					auto c_hid_device = std::shared_ptr<hid_device>(hid_open_path(cur_dev->path), &hid_close);
-					GUID _guid;
-					hid_winapi_get_container_id(c_hid_device.get(), &_guid);
+	while (cur_dev) {
+		if ((cur_dev->usage_page & 0xFF00) == 0xFF00) {
+			if ((cur_dev->usage == USAGE_PAGE::SHORT) || (cur_dev->usage == USAGE_PAGE::LONG)) {
+				auto c_hid_device = std::shared_ptr<hid_device>(hid_open_path(cur_dev->path), &hid_close);
+				GUID _guid;
+				hid_winapi_get_container_id(c_hid_device.get(), &_guid);
 
-					bool found = (hid_device_map.find(_guid) != hid_device_map.end());
+				bool found = (hid_device_map.find(_guid) != hid_device_map.end());
 
-					if (!found) {
-						hid_device_map[_guid] = std::unique_ptr<LGSTrayHID::HIDDevice>(new LGSTrayHID::HIDDevice(GUID_to_string(_guid)));
-					}
+				if (!found) {
+					hid_device_map[_guid] = std::unique_ptr<LGSTrayHID::HIDDevice>(new LGSTrayHID::HIDDevice(GUID_to_string(_guid)));
+				}
 
-					if (cur_dev->usage == USAGE_PAGE::SHORT) {
-						hid_device_map[_guid]->assign_short(c_hid_device);
-					}
-					else if (cur_dev->usage == USAGE_PAGE::LONG) {
-						hid_device_map[_guid]->assign_long(c_hid_device);
-					}
+				if (cur_dev->usage == USAGE_PAGE::SHORT) {
+					hid_device_map[_guid]->assign_short(c_hid_device);
+				}
+				else if (cur_dev->usage == USAGE_PAGE::LONG) {
+					hid_device_map[_guid]->assign_long(c_hid_device);
 				}
 			}
-
-			cur_dev = cur_dev->next;
 		}
-	}
-	catch (const std::exception& e) {
-		return 1;
+
+		cur_dev = cur_dev->next;
 	}
 
 	try {
 		LGSTrayHID::WebsocketServer::init_and_serve(port);
 	}
 	catch (const std::exception& e) {
-		return 2;
+		return 1;
 	}
 
 	return 0;
