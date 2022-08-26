@@ -61,23 +61,18 @@ struct GUIDComparer
 typedef websocketpp::server<websocketpp::config::asio> server;
 typedef server::message_ptr message_ptr;
 
-void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
-	//std::cout << "on_message called with hdl: " << hdl.lock().get()
-	//	<< " and message: " << msg->get_payload()
-	//	<< std::endl;
-
-	//try {
-	//	s->send(hdl, msg->get_payload(), msg->get_opcode());
-	//}
-	//catch (websocketpp::exception const& e) {
-	//	std::cout << "Echo failed because: "
-	//		<< "(" << e.what() << ")" << std::endl;
-	//}
-}
-
 using namespace std::placeholders;
 
-int main() {
+int main(int argc, char **argv) {
+	int port = 9020;
+	if (argc > 1) {
+		int requested_port = std::atoi(argv[1]);
+
+		if ((1 < requested_port) && (requested_port <= UINT16_MAX)) {
+			port = requested_port;
+		}
+	}
+
 	LGSTrayHID::LogiDevice::Register_battery_update_cb([](const LGSTrayHID::LogiDevice& dev) {
 		std::cout << dev.battery_summary().dump() << std::endl;
 		std::cout << LGSTrayHID::MapWrapper::to_json().dump() << std::endl;
@@ -93,10 +88,6 @@ int main() {
 
 	auto devs = std::unique_ptr<hid_device_info, decltype(&hid_free_enumeration)>(hid_enumerate(0x046d, 0x00), &hid_free_enumeration);
 	auto cur_dev = devs.get();
-
-	std::string short_path;
-	std::string long_path;
-
 
 	std::map<GUID, std::unique_ptr<LGSTrayHID::HIDDevice>, GUIDComparer> hid_device_map;
 
@@ -125,7 +116,12 @@ int main() {
 		cur_dev = cur_dev->next;
 	}
 
-	LGSTrayHID::WebsocketServer::init_and_serve(9020);
+	try {
+		LGSTrayHID::WebsocketServer::init_and_serve(port);
+	}
+	catch (const std::exception& e) {
+		return 1;
+	}
 
 	return 0;
 }
