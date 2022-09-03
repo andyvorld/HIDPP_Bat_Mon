@@ -3,7 +3,9 @@
 #include <string>
 #include <memory>
 #include <functional>
+
 #include <hidapi.h>
+#include "hid_io_debug.hpp"
 
 #include "Battery.hpp"
 

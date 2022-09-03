@@ -1,7 +1,10 @@
 #pragma once
 
 #include <memory>
+
 #include <hidapi.h>
+#include "hid_io_debug.hpp"
+
 #include "LGSTrayHID_common.hpp"
 
 namespace LGSTrayHID {

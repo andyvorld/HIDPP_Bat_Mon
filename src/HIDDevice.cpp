@@ -1,12 +1,12 @@
+#include <iostream>
 #include <mutex>
+
 #include "HIDDevice.hpp"
 #include "HIDPPMsg.hpp"
-#include <iostream>
 
 using namespace std::chrono_literals;
 
 namespace LGSTrayHID {
-	std::mutex m;
 	constexpr int HID_TIMEOUT = 100;
 
 	HIDDevice::HIDDevice(std::string container_name) : container_name(container_name) {
@@ -41,7 +41,7 @@ namespace LGSTrayHID {
 
 			//std::this_thread::sleep_for(500ms);
 
-			for (uint8_t i = 0; i <= 10; ++i) {
+			for (uint8_t i = 0; i <= -1; ++i) {
 				uint8_t buf[short_buf_size] = { 0x10, i, 0x00, 0x10 | 0x00, 0x00, 0x00, 0x00 };
 				hid_write(this->_short_dev.get(), buf, short_buf_size);
 			}
@@ -66,15 +66,6 @@ namespace LGSTrayHID {
 				if (ret == 0) {
 					continue;
 				}
-
-				m.lock();
-				printf("short_dev: ");
-				for (size_t i = 0; i < HIDPP_SHORT_SIZE; i++)
-				{
-					printf("0x%02X ", msg.data()[i]);
-				}
-				printf("\n");
-				m.unlock();
 
 				uint8_t dev_idx = msg.get_device_idx();
 
@@ -127,15 +118,6 @@ namespace LGSTrayHID {
 				if (ret == 0) {
 					continue;
 				}
-
-				m.lock();
-				printf("long_dev: ");
-				for (size_t i = 0; i < HIDPP_LONG_SIZE; i++)
-				{
-					printf("0x%02X ", msg.data()[i]);
-				}
-				printf("\n");
-				m.unlock();
 
 				uint8_t dev_idx = msg.get_device_idx();
 

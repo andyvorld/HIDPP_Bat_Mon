@@ -20,7 +20,7 @@ add_executable(${EXEC_NAME}
 	"src/CMakeProject1.cpp" 
 	"src/HIDDevice.cpp" 
 	"src/HIDPPMsg.cpp"
- "src/LogiDevice.cpp" "src/LGSTrayHID_common.cpp" "src/Battery1001.cpp" "src/Battery1000.cpp" "src/Battery1004.cpp" "src/MapWrapper.cpp" "src/hid_api_debug.cpp")
+ "src/LogiDevice.cpp" "src/LGSTrayHID_common.cpp" "src/Battery1001.cpp" "src/Battery1000.cpp" "src/Battery1004.cpp" "src/MapWrapper.cpp" "src/hid_io_debug.cpp")
 
 target_link_libraries(
 	${EXEC_NAME} PUBLIC

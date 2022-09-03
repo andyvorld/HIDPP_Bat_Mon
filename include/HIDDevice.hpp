@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hidapi.h>
+#include "hid_io_debug.hpp"
 
 #include <memory>
 #include <thread>
