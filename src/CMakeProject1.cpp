@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 		cur_dev = cur_dev->next;
 	}
 
-	std::this_thread::sleep_for(1s);
+	std::this_thread::sleep_for(10s);
 
 	return 0;
 }
