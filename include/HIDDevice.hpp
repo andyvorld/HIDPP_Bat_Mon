@@ -20,6 +20,7 @@ namespace LGSTrayHID {
 
 		void _check_if_ready();
 	public:
+		std::mutex devices_map_mutex;
 		std::unordered_map<int, std::shared_ptr<LogiDevice>> devices;
 		const std::string container_name;
 

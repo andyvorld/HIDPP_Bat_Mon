@@ -3,6 +3,8 @@
 #include "HIDPPMsg.hpp"
 #include <iostream>
 
+using namespace std::chrono_literals;
+
 namespace LGSTrayHID {
 	std::mutex m;
 	constexpr int HID_TIMEOUT = 100;
@@ -27,14 +29,21 @@ namespace LGSTrayHID {
 
 	void HIDDevice::_check_if_ready() {
 		if (_short_reader && _long_reader) {
-			constexpr size_t buf_size = 7;
+			constexpr size_t short_buf_size = 7;
 			{
-				uint8_t buf[buf_size] = { 0x10, 0xFF, 0x80, 0x00, 0x00, 0x01, 0x00 };
-				hid_write(this->_short_dev.get(), buf, buf_size);
+				uint8_t buf[short_buf_size] = { 0x10, 0xFF, 0x80, 0x00, 0x00, 0x01, 0x00 };
+				hid_write(this->_short_dev.get(), buf, short_buf_size);
 			}
 			{
-				uint8_t buf[buf_size] = { 0x10, 0xFF, 0x80, 0x02, 0x02, 0x00, 0x00 };
-				hid_write(this->_short_dev.get(), buf, buf_size);
+				uint8_t buf[short_buf_size] = { 0x10, 0xFF, 0x80, 0x02, 0x02, 0x00, 0x00 };
+				hid_write(this->_short_dev.get(), buf, short_buf_size);
+			}
+
+			//std::this_thread::sleep_for(500ms);
+
+			for (size_t i = 0; i <= 10; ++i) {
+				uint8_t buf[short_buf_size] = { 0x10, i, 0x00, 0x10 | 0x00, 0x00, 0x00, 0x00 };
+				hid_write(this->_short_dev.get(), buf, short_buf_size);
 			}
 		}
 
@@ -73,8 +82,10 @@ namespace LGSTrayHID {
 				//	continue;
 				//}
 
-				auto target_dev = this->devices.find(dev_idx);
+				HIDPPMsg_10 *msg_10 = reinterpret_cast<HIDPPMsg_10*>(&msg);
 
+				std::unique_lock<std::mutex> lock(devices_map_mutex);
+				auto target_dev = this->devices.find(dev_idx);
 				if (target_dev == this->devices.end()) {
 					this->devices[dev_idx] = LogiDevice::make_shared(dev_idx, container_name, _short_dev, _long_dev);
 
@@ -82,8 +93,7 @@ namespace LGSTrayHID {
 					hid_write(this->_short_dev.get(), buf, HIDPP_SHORT_SIZE);
 					continue;
 				}
-
-				HIDPPMsg_10 *msg_10 = reinterpret_cast<HIDPPMsg_10*>(&msg);
+				lock.unlock();
 				
 				// On Connection notification
 				if (msg_10->get_sub_id() == 0x41) {
@@ -133,14 +143,20 @@ namespace LGSTrayHID {
 				//	continue;
 				//}
 
-				auto target_dev = this->devices.find(dev_idx);
+				HIDPPMsg_20 &msg20 = reinterpret_cast<HIDPPMsg_20&>(msg);
 
+				std::unique_lock<std::mutex> lock(devices_map_mutex);
+				auto target_dev = this->devices.find(dev_idx);
 				if (target_dev == this->devices.end()) {
-					// STUB ignore device messages
+					if ((msg20.get_device_idx() < 0xFF) && (msg20.get_function_id() == 1) && (msg20.get_sw_id() == SW_ID)) {
+						this->devices[dev_idx] = LogiDevice::make_shared(dev_idx, container_name, _short_dev, _long_dev);
+
+						uint8_t buf[HIDPP_SHORT_SIZE] = { HIDPP_SHORT, dev_idx, 0x00, 0x10, 0x00, 0x00, 0x00 };
+						hid_write(this->_short_dev.get(), buf, HIDPP_SHORT_SIZE);
+					}
 					continue;
 				}
-
-				HIDPPMsg_20 &msg20 = reinterpret_cast<HIDPPMsg_20&>(msg);
+				lock.unlock();
 
 				if (msg20.get_feature_index() >= 0x40) {
 					// STUB ignore HIDPP 1.0 long messages
@@ -148,9 +164,14 @@ namespace LGSTrayHID {
 				}
 
 				if ((msg20.get_sw_id() != SW_ID) && (msg20.get_sw_id() != 0x00)) {
-					// STUB ignore HIDPP 2.0 long message not tagged with SW_ID
+					// STUB ignore HIDPP 2.0 long message not tagged with SW_ID or Notification 0x00
 					continue;
 				}
+
+				//if ((msg20.get_feature_index() == 0x00) && (msg20.get_function_id()) == 1 && (msg20.get_sw_id() == SW_ID)) {
+				//	// Ignore SW_ID tagged ping response, should never be sent
+				//	continue;
+				//}
 
 				target_dev->second->invoke_response(msg.move_ptr());
 			}
