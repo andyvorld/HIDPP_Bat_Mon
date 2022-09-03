@@ -9,31 +9,49 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 project("libHidTest")
 
-set(EXEC_NAME "hidpp_mon")
-
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/hidapi-win")
 # add_subdirectory("${CMAKE_SOURCE_DIR}/external/websocketpp")
 # add_subdirectory("${CMAKE_SOURCE_DIR}/external/nlohmann_json")
 
-
-add_executable(${EXEC_NAME} 
-	"src/CMakeProject1.cpp" 
+add_library(LGSTrayHID_lib SHARED
+	"src/LGSTrayHID_lib.cpp" 
 	"src/HIDDevice.cpp" 
 	"src/HIDPPMsg.cpp"
- "src/LogiDevice.cpp" "src/LGSTrayHID_common.cpp" "src/Battery1001.cpp" "src/Battery1000.cpp" "src/Battery1004.cpp" "src/MapWrapper.cpp" "src/hid_io_debug.cpp")
+	"src/LogiDevice.cpp" "src/LGSTrayHID_common.cpp" "src/Battery1001.cpp" "src/Battery1000.cpp" "src/Battery1004.cpp" "src/MapWrapper.cpp" "src/hid_io_debug.cpp"
+)
+
+#add_executable(${EXEC_NAME} 
+#	"src/CMakeProject1.cpp" 
+#	"src/HIDDevice.cpp" 
+#	"src/HIDPPMsg.cpp"
+# "src/LogiDevice.cpp" "src/LGSTrayHID_common.cpp" "src/Battery1001.cpp" "src/Battery1000.cpp" "src/Battery1004.cpp" "src/MapWrapper.cpp" "src/hid_io_debug.cpp")
 
 target_link_libraries(
-	${EXEC_NAME} PUBLIC
+	LGSTrayHID_lib PUBLIC
 	hidapi_win
 )
 target_include_directories(
-	${EXEC_NAME} PUBLIC 
+	LGSTrayHID_lib PUBLIC 
 	"include"
 )
 
 if(MSVC)
-	target_compile_options(${EXEC_NAME} 
+	target_compile_options(LGSTrayHID_lib 
 		PRIVATE "/external:anglebrackets"
 		PRIVATE "/external:W0"
 	)
 endif(MSVC)
+
+add_executable(lib_test
+	"src/main.cpp"
+)
+
+target_include_directories(
+	lib_test
+	PUBLIC "include"
+)
+
+target_link_libraries(
+	lib_test
+	PUBLIC LGSTrayHID_lib
+)

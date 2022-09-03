@@ -15,6 +15,19 @@ namespace LGSTrayHID {
 			logiDevice_map[key] = logiDevice;
 		}
 
+		void update_device_battery(KeyType key) {
+			auto entry = logiDevice_map.find(key);
+
+			if (entry != logiDevice_map.end()) {
+				const std::shared_ptr<LogiDevice> dev = entry->second.lock();
+				if (dev == nullptr) {
+					return;
+				}
+
+				dev->update_battery();
+			}
+		}
+
 		void clear_map() {
 			const std::lock_guard<std::mutex> lock(logiDevice_map_mutex);
 			logiDevice_map.clear();

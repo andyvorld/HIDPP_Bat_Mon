@@ -25,6 +25,8 @@ namespace LGSTrayHID {
 		if (this->_long_reader) {
 			_long_reader->join();
 		}
+
+		std::lock_guard lock(devices_map_mutex);
 	}
 
 	void HIDDevice::_check_if_ready() {

@@ -3,6 +3,7 @@
 #include <hidapi.h>
 #include "hid_io_debug.hpp"
 
+#include <mutex>
 #include <memory>
 #include <thread>
 #include <unordered_map>
