@@ -229,29 +229,29 @@ namespace LGSTrayHID {
 		return std::shared_ptr<LogiDevice>(new LogiDevice(dev_idx, container_name, short_dev, long_dev));
 	}
 
-	nlohmann::json LogiDevice::battery_summary() const
+	void LogiDevice::battery_summary() const
 	{
-		return 
-		{
-			{"deviceId", this->dev_id},
-			{"percentage", this->battery_percentage.load()},
-			{"charging", this->battery_status.load() == LGSTrayHID::Battery::Power_supply_status::POWER_SUPPLY_STATUS_CHARGING},
-			{"mileage", -1.0},
-			{"voltage", this->battery_voltage.load()}
-		};
+		//{
+		//	{"deviceId", this->dev_id},
+		//	{ "percentage", this->battery_percentage.load() },
+		//	{ "charging", this->battery_status.load() == LGSTrayHID::Battery::Power_supply_status::POWER_SUPPLY_STATUS_CHARGING },
+		//	{ "mileage", -1.0 },
+		//	{ "voltage", this->battery_voltage.load() }
+		//}
+		return;
 	}
 
-	nlohmann::json LogiDevice::device_summary() const
+	void LogiDevice::device_summary() const
 	{
-		nlohmann::json ret = 
-		{
-			{"deviceType", LogiDeviceTypeEnumToString(this->device_type)},
-			{"id", this->dev_id},
-			{"extendedDisplayName", this->device_name}
-		};
-		ret["capabilities"]["hasBatteryStatus"] = true;
+		//nlohmann::json ret =
+		//{
+		//	{"deviceType", LogiDeviceTypeEnumToString(this->device_type)},
+		//	{"id", this->dev_id},
+		//	{"extendedDisplayName", this->device_name}
+		//};
+		//ret["capabilities"]["hasBatteryStatus"] = true;
 
-		return ret;
+		return;
 	}
 
 	void LogiDevice::Register_battery_update_cb(Battery_update_cb cb)

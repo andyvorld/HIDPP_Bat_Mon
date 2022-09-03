@@ -5,8 +5,6 @@
 #include <functional>
 #include <hidapi.h>
 
-#include <nlohmann/json.hpp>
-
 #include "Battery.hpp"
 
 namespace LGSTrayHID {
@@ -94,8 +92,8 @@ namespace LGSTrayHID {
 		[[nodiscard]] static std::shared_ptr<LogiDevice> make_shared(uint8_t dev_idx, std::string container_name, const std::shared_ptr<hid_device>& short_dev, const std::shared_ptr<hid_device>& long_dev);
 		~LogiDevice() = default;
 
-		nlohmann::json battery_summary() const;
-		nlohmann::json device_summary() const;
+		void battery_summary() const;
+		void device_summary() const;
 
 		static void Register_battery_update_cb(Battery_update_cb cb);
 		static void Register_device_ready_cb(Device_ready_cb cb);

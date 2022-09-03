@@ -20,12 +20,6 @@
 #include "HIDPPMsg.hpp"
 
 #include "MapWrapper.hpp"
-#include "WebsocketServer.hpp"
-
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-
-#include <nlohmann/json.hpp>
 
 namespace {
 	enum USAGE_PAGE : uint8_t {
@@ -58,30 +52,14 @@ struct GUIDComparer
 	}
 };
 
-typedef websocketpp::server<websocketpp::config::asio> server;
-typedef server::message_ptr message_ptr;
-
 using namespace std::placeholders;
+using namespace std::chrono_literals;
 
 int main(int argc, char **argv) {
-	int port = 9020;
-	if (argc > 1) {
-		int requested_port = std::atoi(argv[1]);
-
-		if ((1 < requested_port) && (requested_port <= UINT16_MAX)) {
-			port = requested_port;
-		}
-	}
-
 	LGSTrayHID::LogiDevice::Register_battery_update_cb([](const LGSTrayHID::LogiDevice& dev) {
-		std::cout << dev.battery_summary().dump() << std::endl;
-		std::cout << LGSTrayHID::MapWrapper::to_json().dump() << std::endl;
-
-		LGSTrayHID::WebsocketServer::notify_subscriptions("/battery/state/changed", dev.battery_summary());
 	});
 
 	LGSTrayHID::LogiDevice::Register_device_ready_cb([](const LGSTrayHID::LogiDevice& dev) {
-		LGSTrayHID::WebsocketServer::notify_subscriptions("/devices/state/changed", LGSTrayHID::MapWrapper::to_json());
 	});
 
 	hid_init();
@@ -116,7 +94,7 @@ int main(int argc, char **argv) {
 		cur_dev = cur_dev->next;
 	}
 
-	LGSTrayHID::WebsocketServer::init_and_serve(port);
+	std::this_thread::sleep_for(1s);
 
 	return 0;
 }
